@@ -1,48 +1,76 @@
 use crate::three::Direction::{Down, Left, Right, Up};
+use array_tool::vec::Intersect;
+use itertools::Itertools;
 
 pub fn three() {}
 
 fn manhattan_distance(first: &str, second: &str) -> i32 {
-    -1
+    let first_path = calculate_path(first);
+    let second_path = calculate_path(second);
+
+    let intersections = first_path.intersect(second_path);
+
+    let origin = Point::new(0,0);
+    let distances: Vec<i32> = intersections.into_iter().map(|point|point.distance(&origin)).sorted().collect();
+
+
+    *distances.first().expect("no intersections?")
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 struct Point { x: i32, y: i32 }
 
 // I need to do the same thing here as in calculte path, should probably only do it in one place or something...
 
 impl Point {
+    fn new(x:i32, y:i32) -> Point {
+        Point{x:x, y:y}
+    }
+
     fn next(&self, direction: &Direction) -> Vec<Point> {
+        let mut points = vec![];
+        let mut last_point = self.clone();
+
+
         match direction {
             Up(steps) => {
-                let mut points = vec![];
+
                 for step in 0..*steps {
-                    points.push(Point { x: self.x, y: self.y + 1 })
+                    let new_point = Point { x: last_point.x, y: last_point.y + 1 };
+                    last_point = new_point.clone();
+                    points.push(new_point)
                 }
                 points
             }
             Down(steps) => {
-                let mut points = vec![];
                 for step in 0..*steps {
-                    points.push(Point { x: self.x, y: self.y - 1 })
+                    let new_point = Point { x: last_point.x, y: last_point.y - 1 };
+                    last_point = new_point.clone();
+                    points.push(new_point)
                 }
                 points
             }
             Left(steps) => {
-                let mut points = vec![];
                 for step in 0..*steps {
-                    points.push(Point { x: self.x - 1, y: self.y })
+                    let new_point = Point { x: last_point.x - 1, y: last_point.y };
+                    last_point = new_point.clone();
+                    points.push(new_point)
                 }
                 points
             }
             Right(steps) => {
-                let mut points = vec![];
                 for step in 0..*steps {
-                    points.push(Point { x: self.x + 1, y: self.y })
+                    let new_point = Point { x: last_point.x + 1, y: last_point.y };
+                    last_point = new_point.clone();;
+                    points.push(new_point)
                 }
                 points
             }
         }
+    }
+
+    fn distance(&self, other: &Point) -> i32 {
+        return (self.x - other.x).abs() +(self.y - other.y).abs()
     }
 }
 
@@ -112,6 +140,20 @@ mod tests {
             Point { x: 1, y: -1 },
             Point { x: 2, y: -1 },
         ]);
+    }
+
+    #[test]
+    fn test_distance() {
+        assert_eq!(Point::new(0,0).distance(&Point::new(0,0)), 0);
+        assert_eq!(Point::new(0,0).distance(&Point::new(1,0)), 1);
+        assert_eq!(Point::new(0,0).distance(&Point::new(0,1)), 1);
+        assert_eq!(Point::new(0,0).distance(&Point::new(1,1)), 2);
+
+        assert_eq!(Point::new(0,0).distance(&Point::new(-1,-1)), 2);
+
+        assert_eq!(Point::new(-1,-1).distance(&Point::new(-2,-2)), 2);
+
+        assert_eq!(Point::new(-1,-1).distance(&Point::new(1,1)), 4);
     }
 
     #[test]
