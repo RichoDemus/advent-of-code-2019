@@ -132,11 +132,6 @@ mod tests {
     }
 
     #[test]
-    fn part2() {
-        bruteforce();
-    }
-
-    #[test]
     fn test_add_params() {
         assert_eq!(add_parameters("1,2,3,4,5,6,7,8,9", "11", "12"), "1,11,12,4,5,6,7,8,9");
     }

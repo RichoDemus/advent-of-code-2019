@@ -6,6 +6,8 @@ mod three;
 mod four;
 mod five;
 mod six;
+mod intputer;
+mod seven;
 mod read_lines;
 
 fn main() {
