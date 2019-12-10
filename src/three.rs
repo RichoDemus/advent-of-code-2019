@@ -2,10 +2,20 @@ use crate::three::Direction::{Down, Left, Right, Up};
 use array_tool::vec::Intersect;
 use itertools::Itertools;
 use crate::read_lines::read_lines;
+use std::cmp;
 
 pub fn three() {
     let input = read_lines("three");
     let distance = manhattan_distance(
+        input.get(0).expect("couldn't get first input line"),
+        input.get(1).expect("couldn't get second input line"),
+    );
+    println!("answer: {}", distance);
+}
+
+pub fn three_part2() {
+    let input = read_lines("three_part2");
+    let distance = fewest_steps(
         input.get(0).expect("couldn't get first input line"),
         input.get(1).expect("couldn't get second input line"),
     );
@@ -23,6 +33,28 @@ fn manhattan_distance(first: &str, second: &str) -> i32 {
 
 
     *distances.first().expect("no intersections?")
+}
+
+fn fewest_steps(first: &str, second: &str) -> i32 {
+    let first_path = calculate_path(first);
+    let second_path = calculate_path(second);
+
+    println!("Paths calclulated, finding shortest steps");
+
+    let mut shortest:Option<usize> = None;
+
+    for (i, first_step) in first_path.iter().enumerate() {
+        for (j, second_step) in second_path.iter().enumerate() {
+            if first_step == second_step {
+                shortest = match shortest {
+                    Some(current) => Some(cmp::min(current, i + j)),
+                    None => Some(i + j),
+                }
+            }
+        }
+    }
+
+    shortest.expect("no intersections") as i32 + 2 //add 1+1 since vectors start with 0
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -100,7 +132,7 @@ fn calculate_path(instructions: &str) -> Vec<Point> {
         let last = path.last();
         let last = last.unwrap_or(&Point { x: 0, y: 0 });
         let mut new_points = last.next(&direction);
-        println!("Direction {:?} resulted in {:?}", direction, new_points);
+//        println!("Direction {:?} resulted in {:?}", direction, new_points);
         path.append(&mut new_points);
     }
 
@@ -168,5 +200,11 @@ mod tests {
     fn test() {
         assert_eq!(manhattan_distance("R75,D30,R83,U83,L12,D49,R71,U7,L72", "U62,R66,U55,R34,D71,R55,D58,R83"), 159);
         assert_eq!(manhattan_distance("R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51", "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"), 135);
+    }
+
+    #[test]
+    fn test_fewest_steps() {
+        assert_eq!(fewest_steps("R75,D30,R83,U83,L12,D49,R71,U7,L72", "U62,R66,U55,R34,D71,R55,D58,R83"), 610);
+        assert_eq!(fewest_steps("R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51", "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"), 410);
     }
 }
