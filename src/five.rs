@@ -6,19 +6,6 @@ use itertools::Itertools;
 const ORIGINAL_INPUT: &str = "1,0,0,3,1,1,2,3,1,3,4,3,1,5,0,3,2,1,13,19,1,9,19,23,2,13,23,27,2,27,13,31,2,31,10,35,1,6,35,39,1,5,39,43,1,10,43,47,1,5,47,51,1,13,51,55,2,55,9,59,1,6,59,63,1,13,63,67,1,6,67,71,1,71,10,75,2,13,75,79,1,5,79,83,2,83,6,87,1,6,87,91,1,91,13,95,1,95,13,99,2,99,13,103,1,103,5,107,2,107,10,111,1,5,111,115,1,2,115,119,1,119,6,0,99,2,0,14,0";
 const MODIFIED_INPUT: &str = "1,12,2,3,1,1,2,3,1,3,4,3,1,5,0,3,2,1,13,19,1,9,19,23,2,13,23,27,2,27,13,31,2,31,10,35,1,6,35,39,1,5,39,43,1,10,43,47,1,5,47,51,1,13,51,55,2,55,9,59,1,6,59,63,1,13,63,67,1,6,67,71,1,71,10,75,2,13,75,79,1,5,79,83,2,83,6,87,1,6,87,91,1,91,13,95,1,95,13,99,2,99,13,103,1,103,5,107,2,107,10,111,1,5,111,115,1,2,115,119,1,119,6,0,99,2,0,14,0";
 
-pub fn bruteforce() {
-    for noun in 1..100 {
-        for verb in 1..100 {
-            let result = exec_with_params(noun, verb);
-            if result == 19690720 {
-                println!("verb {} and nounc {} is right, for the answer {}", noun, verb, (100 * noun + verb));
-                panic!();
-            }
-            print!(".");
-        }
-    }
-}
-
 fn exec_with_input(intcode: &str, inputs: Vec<i32>) -> Vec<i32> {
     let codes: Vec<i32> = str_to_vec(intcode);
     let mut intputer = Intputer::with_input(codes, inputs);
@@ -80,7 +67,7 @@ impl Intputer {
             .join(",")
     }
 
-    // process the next row, returns true if we're done
+    // process the next operation, returns true if we're done
     fn process(&mut self) -> bool {
         let first_instruction = self.instruction_pointer;
         let last_instruction = cmp::min(first_instruction + 4, self.memory.len());
@@ -205,11 +192,6 @@ mod tests {
         println!("answer: {:?}", exec(MODIFIED_INPUT));
     }
 
-//    #[test]
-//    fn part2() {
-//        bruteforce();
-//    }
-
     #[test]
     fn test_add_params() {
         assert_eq!(add_parameters("1,2,3,4,5,6,7,8,9", "11", "12"), "1,11,12,4,5,6,7,8,9");
@@ -240,5 +222,15 @@ mod tests {
             third_parameter_mode: 0,
         };
         assert_eq!(OperationAndModes::from(1002), expected);
+    }
+
+    #[test]
+    fn i_try_to_write_a_program(){
+        let inputs = vec![10,20];
+        // does (input_one + 1) * input_two
+        let program = "3,0,101,1,0,0,3,1,2,0,1,0,4,0,99";
+        let outputs = exec_with_input(program, inputs);
+        println!("result: {:?}", outputs);
+        assert_eq!(outputs, vec![220]);
     }
 }
