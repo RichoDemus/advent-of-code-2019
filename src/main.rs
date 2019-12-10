@@ -4,6 +4,7 @@ mod one;
 mod two;
 mod three;
 mod four;
+mod six;
 mod read_lines;
 
 fn main() {
