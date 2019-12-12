@@ -1,3 +1,5 @@
+use std::intrinsics::transmute;
+
 pub fn four() {
     println!("four, there are {} different passwords", num_different_passwords(372304, 847060));
 }
@@ -22,21 +24,40 @@ fn is_valid(password: u32) -> bool {
     }
 
     // should have at least set of identical adjacent digits
-    let pairs = adjacent_pairs(digits);
+//    let pairs = adjacent_pairs(digits);
+//    let mut pair_found = false;
+//    for (left, right) in pairs.clone() {
+//        if left == right {
+//            pair_found = true;
+//            break
+//        }
+//    }
+//    if pair_found == false {
+//        return false
+//    }
     let mut pair_found = false;
-    for (left, right) in pairs.clone() {
-        if left == right {
-            pair_found = true;
-            break
+    let mut identicals_found_so_far = 1;
+    let mut last_digit = digits.get(0);
+    for i in 1..=digits.len() {
+        let current_digit = digits.get(i);
+        if last_digit == current_digit {
+            identicals_found_so_far += 1;
+        } else {
+            // we have a new digit, the last ones might have been a pair
+            if identicals_found_so_far == 2 {
+                pair_found = true;
+                break;
+            }
+            last_digit = current_digit;
+            identicals_found_so_far = 1;
         }
     }
     if pair_found == false {
         return false
     }
 
-
     //digits should never decrease
-    for (left, right) in pairs {
+    for (left, right) in adjacent_pairs(digits) {
         if left > right {
             return false
         }
@@ -81,19 +102,23 @@ mod tests {
     #[test]
     fn test_is_valid() {
         // six digits
-        assert_eq!(is_valid(11111), false);
-        assert_eq!(is_valid(111111), true);
-        assert_eq!(is_valid(1111111), false);
+        assert_eq!(is_valid(11234), false);
+        assert_eq!(is_valid(112345), true);
+        assert_eq!(is_valid(1123456), false);
 
         // pair
         assert_eq!(is_valid(123456), false, "fail if no adjacent");
         assert_eq!(is_valid(123455), true, "ok if one adjacent");
         assert_eq!(is_valid(123355), true, "ok if two adjacent");
-        assert_eq!(is_valid(123555), true, "ok if three of a kind");
 
         // never decrease
         assert_eq!(is_valid(112233), true, "should increase");
         assert_eq!(is_valid(112230), false, "0 is smaller than 3, should fail");
+
+        // the adjacent pair should only be a pair
+        assert_eq!(is_valid(112233), true);
+        assert_eq!(is_valid(123444), false, "only a three of a kind should not be valid");
+        assert_eq!(is_valid(111122), true, "111122 has a pair");
     }
 
     #[test]

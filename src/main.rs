@@ -15,5 +15,7 @@ fn main() {
 //    bruteforce();
 //    three_old::draw();
 //    three::three_part2();
-    four::four();
+//    four::four();
+//    five::five();
+    six::six();
 }
