@@ -2,6 +2,13 @@ use std::cmp;
 use std::slice::Iter;
 
 use itertools::Itertools;
+use crate::intputer::Result::Done;
+
+pub(crate) enum Result {
+    Done,
+    Output(i32),
+    AwaitingInput,
+}
 
 #[derive(Debug)]
 pub(crate) struct Intputer {
@@ -13,6 +20,15 @@ pub(crate) struct Intputer {
 }
 
 impl Intputer {
+    pub(crate) fn new(intcode: &str) -> Intputer {
+        Intputer {
+            memory: str_to_vec(intcode),
+            instruction_pointer: 0,
+            inputs: vec![],
+            outputs: vec![],
+        }
+    }
+
     pub(crate) fn with_input(intcode: &str, inputs: Vec<i32>) -> Intputer {
         Intputer::with_input_vectorized_code(str_to_vec(intcode), inputs)
     }
@@ -26,7 +42,16 @@ impl Intputer {
         }
     }
 
-    pub(crate) fn run(&mut self) -> Vec<i32> {
+    pub(crate) fn input(&mut self, input:i32) {
+        self.inputs.push(input);
+    }
+
+    pub(crate) fn run(&mut self) -> Result {
+        Done
+    }
+
+    /// old run method, just runs until crash or code 99
+    pub(crate) fn legacy_run(&mut self) -> Vec<i32> {
         while self.process() == false {}
         self.outputs.clone()
     }
@@ -58,14 +83,16 @@ impl Intputer {
         println!("Processing code {}, pos {:?} and {:?}, result to {:?}", opcode, first_position, second_position, third_position);
         match opcode {
             1 => {
+                // sum pos1 and pos2, write to pos3
                 let first_value = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
                 let second_value = self.get_value(*second_position.expect("couldn't get second pointer") as usize, operation_and_modes.second_parameter_mode);
-//                println!("adding {} and {} (pos {} and {}) and writing it to {}", first_value, second_value, first_position, second_position, result_position);
+                println!("adding {} and {} (pos {:?} and {:?}) and writing it to {:?}", first_value, second_value, first_position, second_position, third_position);
                 let result = first_value + second_value;
                 self.write(*third_position.expect("couldn't get result pointer") as usize, result);
                 self.instruction_pointer += 4;
             }
             2 => {
+                // multiply pos1 and pos2, write to pos3
                 let first_value = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
                 let second_value = self.get_value(*second_position.expect("couldn't get second pointer") as usize, operation_and_modes.second_parameter_mode);
 //                println!("multiplying {} with {} (pos {} and {}) and writing it to {}", first_value, second_value, first_position, second_position, result_position);
@@ -74,11 +101,13 @@ impl Intputer {
                 self.instruction_pointer += 4;
             }
             3 => {
+                // write input to pos1
                 let input = self.inputs.remove(0);
                 self.write(*first_position.expect("couldn't get first pointer") as usize, input);
                 self.instruction_pointer += 2;
             }
             4 => {
+                // output pos1
                 let value = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
                 self.outputs.push(value);
                 self.instruction_pointer += 2;
@@ -137,9 +166,13 @@ impl Intputer {
 
     fn get_value(&self, index: usize, mode: i32) -> i32 {
         if mode == 0 {
-            self.memory.get(index).expect("could not get value from memory").clone()
+            let value = self.memory.get(index).expect("could not get value from memory").clone();
+            println!("\tread {} from memory slot {}", value, index);
+            value
         } else {
-            index as i32
+            let value = index as i32;
+            println!("\tread constant {}", index);
+            value
         }
     }
 
@@ -195,7 +228,7 @@ mod tests {
     fn test_simple_input_output() {
         let inputs = vec![1337];
         let mut intputer = Intputer::with_input("3,0,4,0,99", inputs);
-        let outputs = intputer.run();
+        let outputs = intputer.legacy_run();
         assert_eq!(outputs.len(), 1);
         let result = outputs.get(0).cloned().unwrap();
         assert_eq!(result, 1337);
@@ -218,8 +251,34 @@ mod tests {
         // does (input_one + 1) * input_two
         let program = "3,0,101,1,0,0,3,1,2,0,1,0,4,0,99";
         let mut intputer = Intputer::with_input(program, inputs);
-        let outputs = intputer.run();
+        let outputs = intputer.legacy_run();
         println!("result: {:?}", outputs);
         assert_eq!(outputs, vec![220]);
+    }
+
+    #[test]
+    fn new_input_output() {
+        let intcode = "3,0,1001,0,1,0,4,0,3,0,1001,0,1,0,4,0,99";
+//        let mut intputer = Intputer::with_input(intcode, vec![1,2]);
+        let mut intputer = Intputer::new(intcode);
+        if let Result::AwaitingInput = intputer.run() {
+        } else { panic!("wrong result") };
+        intputer.input(1);
+        let output = if let Result::Output(out) = intputer.run() {
+            out
+        } else { panic!("wrong result") };
+        assert_eq!(output, 2);
+
+        if let Result::AwaitingInput = intputer.run() {
+        } else { panic!("wrong result") };
+        intputer.input(output);
+
+        let output = if let Result::Output(out) = intputer.run() {
+            out
+        } else { panic!("wrong result") };
+        assert_eq!(output, 3);
+
+        if let Result::Done = intputer.run() {
+        } else { panic!("wrong result") };
     }
 }
