@@ -3,8 +3,9 @@ use crate::read_lines::read_lines;
 
 pub fn five() {
     let mut input = read_lines("five");
-    let mut intputer = Intputer::with_input(input.pop().unwrap().as_str(), vec![5]);
-    let result = intputer.legacy_run();
+    let mut intputer = Intputer::new(input.pop().unwrap().as_str());
+    intputer.input(5);
+    let result = intputer.run();
     println!("{:?}", result);
 }
 

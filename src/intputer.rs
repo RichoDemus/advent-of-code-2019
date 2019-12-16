@@ -29,19 +29,6 @@ impl Intputer {
         }
     }
 
-    pub(crate) fn with_input(intcode: &str, inputs: Vec<i32>) -> Intputer {
-        Intputer::with_input_vectorized_code(str_to_vec(intcode), inputs)
-    }
-
-    fn with_input_vectorized_code(codes: Vec<i32>, inputs: Vec<i32>) -> Intputer {
-        Intputer {
-            memory: codes,
-            instruction_pointer: 0,
-            inputs,
-            outputs: vec![],
-        }
-    }
-
     pub(crate) fn input(&mut self, input:i32) {
         self.inputs.push(input);
     }
@@ -56,20 +43,6 @@ impl Intputer {
             return res;
         }
     }
-
-    /// old run method, just runs until crash or code 99
-    pub(crate) fn legacy_run(&mut self) -> Vec<i32> {
-//        while self.process() == false {}
-//        self.outputs.clone()
-        panic!("legacy")
-    }
-
-//    fn get_memory(self) -> String {
-//        self.memory.iter()
-//            .cloned()
-//            .map(|val| val.to_string())
-//            .join(",")
-//    }
 
     // process the next operation
     fn process(&mut self) -> Result {
