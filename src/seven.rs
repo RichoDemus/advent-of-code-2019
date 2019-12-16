@@ -5,6 +5,7 @@ use itertools::Itertools;
 use crate::intputer::Intputer;
 use crate::read_lines::read_lines;
 use crate::intputer::Result::Output;
+use crate::intputer::Result::Done;
 
 pub fn seven() {
     let mut input = read_lines("seven");
@@ -15,15 +16,44 @@ pub fn seven() {
 }
 
 pub fn seven_part2() {
-//    let result = run_feedback_loop_until_all_halt();
+    let mut input = read_lines("seven");
+    let program = input.pop().unwrap();
+    let program = program.as_str();
+    let result = highest_thruster_signal_feedback_loop(program);
+    println!("the highest thruster sinal is {}", result);
 }
 
 fn run_feedback_loop_until_all_halt(program: &str, sequence: Vec<i32>) -> i32 {
-    println!("just print these to please linter: {:?}{:?}", program, sequence);
-//    let intputers = vec![
-//
-//    ];
-    -1
+    let mut intputers:Vec<Intputer> = (0..=4).into_iter()
+        .map(|i| {
+            let mut intputer = Intputer::new(program);
+            let seq = sequence.get(i).expect(format!("No sequence for intputer: {}", i).as_str());
+            intputer.input(seq.clone());
+            intputer
+
+        })
+        .collect();
+    let mut last_output = 0; //we begin with zero
+    let mut next_intputer = 0;
+    loop {
+        let intputer = intputers.get_mut(next_intputer).expect(format!("No intputer with index: {}", next_intputer).as_str());
+
+        intputer.input(last_output);
+        match intputer.run() {
+            Done => break,
+            Output(out) => {
+                last_output = out;
+            },
+            _ => panic!("unexpected result"),
+        }
+        next_intputer += 1;
+        if next_intputer > 4 {
+            next_intputer = 0;
+        }
+    }
+
+
+    last_output
 }
 
 fn highest_thruster_signal(program: &str) -> i32 {
@@ -33,6 +63,17 @@ fn highest_thruster_signal(program: &str) -> i32 {
     let mut record = 0;
     for phase_sequence in permutations {
         record = cmp::max(record, calculate_thruster_signal(program, phase_sequence));
+    };
+    record
+}
+
+fn highest_thruster_signal_feedback_loop(program: &str) -> i32 {
+    let phases = vec![5,6,7,8,9];
+    let permutations = permutations(phases);
+
+    let mut record = 0;
+    for phase_sequence in permutations {
+        record = cmp::max(record, run_feedback_loop_until_all_halt(program, phase_sequence));
     };
     record
 }

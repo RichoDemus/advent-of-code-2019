@@ -25,10 +25,11 @@ fn main() {
             five::five();
             five_part_two::five();
             six::six();
+            seven::seven();
             seven::seven_part2();
         }
         _ => {}
     }
 
-    seven::seven();
+    seven::seven_part2();
 }
