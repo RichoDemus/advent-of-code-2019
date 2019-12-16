@@ -75,7 +75,7 @@ impl Point {
         match direction {
             Up(steps) => {
 
-                for step in 0..*steps {
+                for _step in 0..*steps {
                     let new_point = Point { x: last_point.x, y: last_point.y + 1 };
                     last_point = new_point.clone();
                     points.push(new_point)
@@ -83,7 +83,7 @@ impl Point {
                 points
             }
             Down(steps) => {
-                for step in 0..*steps {
+                for _step in 0..*steps {
                     let new_point = Point { x: last_point.x, y: last_point.y - 1 };
                     last_point = new_point.clone();
                     points.push(new_point)
@@ -91,7 +91,7 @@ impl Point {
                 points
             }
             Left(steps) => {
-                for step in 0..*steps {
+                for _step in 0..*steps {
                     let new_point = Point { x: last_point.x - 1, y: last_point.y };
                     last_point = new_point.clone();
                     points.push(new_point)
@@ -99,9 +99,9 @@ impl Point {
                 points
             }
             Right(steps) => {
-                for step in 0..*steps {
+                for _step in 0..*steps {
                     let new_point = Point { x: last_point.x + 1, y: last_point.y };
-                    last_point = new_point.clone();;
+                    last_point = new_point.clone();
                     points.push(new_point)
                 }
                 points
@@ -126,7 +126,6 @@ fn calculate_path(instructions: &str) -> Vec<Point> {
     let instructions = split_input(instructions);
     let mut path: Vec<Point> = vec![];
 
-    let mut location = Point { x: 0, y: 0 };
 
     for direction in instructions {
         let last = path.last();
@@ -158,7 +157,6 @@ fn split_input(path: &str) -> Vec<Direction> {
 
 #[cfg(test)]
 mod tests {
-    use crate::read_lines::read_lines;
     use crate::three::Direction::{Down, Right};
 
     use super::*;

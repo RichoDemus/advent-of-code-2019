@@ -1,13 +1,13 @@
 use std::cmp;
-use std::slice::Iter;
 
-use itertools::Itertools;
-use crate::intputer::Result::Done;
+use crate::intputer::Result::{Done, AwaitingInput, Processing, Output};
 
+#[derive(Debug)]
 pub(crate) enum Result {
     Done,
     Output(i32),
     AwaitingInput,
+    Processing, //internal
 }
 
 #[derive(Debug)]
@@ -47,31 +47,39 @@ impl Intputer {
     }
 
     pub(crate) fn run(&mut self) -> Result {
-        Done
+        loop {
+            let res = self.process();
+            println!("-\tResult: {:?}", res);
+            if let Processing = res {
+                continue
+            }
+            return res;
+        }
     }
 
     /// old run method, just runs until crash or code 99
     pub(crate) fn legacy_run(&mut self) -> Vec<i32> {
-        while self.process() == false {}
-        self.outputs.clone()
+//        while self.process() == false {}
+//        self.outputs.clone()
+        panic!("legacy")
     }
 
-    fn get_memory(self) -> String {
-        self.memory.iter()
-            .cloned()
-            .map(|val| val.to_string())
-            .join(",")
-    }
+//    fn get_memory(self) -> String {
+//        self.memory.iter()
+//            .cloned()
+//            .map(|val| val.to_string())
+//            .join(",")
+//    }
 
-    // process the next operation, returns true if we're done
-    fn process(&mut self) -> bool {
+    // process the next operation
+    fn process(&mut self) -> Result {
         let first_instruction = self.instruction_pointer;
         let last_instruction = cmp::min(first_instruction + 4, self.memory.len());
         println!("Reading instructions from {} to {}", first_instruction, last_instruction);
         let instructions = &self.memory[first_instruction..last_instruction];
         println!("instructions: {:?}", instructions);
         if let Some(99) = instructions.first() {
-            return true;
+            return Done;
         }
 
         let operation_and_modes = OperationAndModes::from(instructions.first().expect("couldn't get operation").clone());
@@ -81,15 +89,17 @@ impl Intputer {
         let third_position = instructions.get(3);
 
         println!("Processing code {}, pos {:?} and {:?}, result to {:?}", opcode, first_position, second_position, third_position);
-        match opcode {
+        let result:Result = match opcode {
             1 => {
                 // sum pos1 and pos2, write to pos3
                 let first_value = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
                 let second_value = self.get_value(*second_position.expect("couldn't get second pointer") as usize, operation_and_modes.second_parameter_mode);
                 println!("adding {} and {} (pos {:?} and {:?}) and writing it to {:?}", first_value, second_value, first_position, second_position, third_position);
                 let result = first_value + second_value;
-                self.write(*third_position.expect("couldn't get result pointer") as usize, result);
+                let position = *third_position.expect("couldn't get result pointer") as usize;
+                self.write(position, result);
                 self.instruction_pointer += 4;
+                Processing
             }
             2 => {
                 // multiply pos1 and pos2, write to pos3
@@ -97,20 +107,29 @@ impl Intputer {
                 let second_value = self.get_value(*second_position.expect("couldn't get second pointer") as usize, operation_and_modes.second_parameter_mode);
 //                println!("multiplying {} with {} (pos {} and {}) and writing it to {}", first_value, second_value, first_position, second_position, result_position);
                 let result = first_value * second_value;
-                self.write(*third_position.expect("couldn't get result pointer") as usize, result);
+                let position = *third_position.expect("couldn't get result pointer") as usize;
+                self.write(position, result);
                 self.instruction_pointer += 4;
+                Processing
             }
             3 => {
                 // write input to pos1
-                let input = self.inputs.remove(0);
-                self.write(*first_position.expect("couldn't get first pointer") as usize, input);
-                self.instruction_pointer += 2;
+                if self.inputs.is_empty() {
+                    AwaitingInput
+                } else {
+                    let input = self.inputs.remove(0);
+                    let position = *first_position.expect("couldn't get first pointer") as usize;
+                    self.write(position, input);
+                    self.instruction_pointer += 2;
+                    Processing
+                }
             }
             4 => {
                 // output pos1
                 let value = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
-                self.outputs.push(value);
+                // self.outputs.push(value);
                 self.instruction_pointer += 2;
+                Output(value)
             }
             5 => {
                 // jump-if-true: if the first parameter is non-zero,
@@ -122,6 +141,7 @@ impl Intputer {
                 } else {
                     self.instruction_pointer += 3;
                 }
+                Processing
             }
             6 => {
                 // jump-if-false: if the first parameter is zero,
@@ -133,6 +153,7 @@ impl Intputer {
                 } else {
                     self.instruction_pointer += 3;
                 }
+                Processing
             }
             7 => {
                 // less than: if the first parameter is less than the second parameter,
@@ -140,11 +161,14 @@ impl Intputer {
                 let first_value = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
                 let second_value = self.get_value(*second_position.expect("couldn't get second pointer") as usize, operation_and_modes.second_parameter_mode);
                 if first_value < second_value {
-                    self.write(*third_position.expect("couldn't get result pointer") as usize, 1);
+                    let position = *third_position.expect("couldn't get result pointer") as usize;
+                    self.write(position, 1);
                 } else {
-                    self.write(*third_position.expect("couldn't get result pointer") as usize, 0);
+                    let position = *third_position.expect("couldn't get result pointer") as usize;
+                    self.write(position, 0);
                 }
                 self.instruction_pointer += 4;
+                Processing
             }
             8 => {
                 // equals: if the first parameter is equal to the second parameter,
@@ -152,16 +176,19 @@ impl Intputer {
                 let first_value = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
                 let second_value = self.get_value(*second_position.expect("couldn't get second pointer") as usize, operation_and_modes.second_parameter_mode);
                 if first_value == second_value {
-                    self.write(*third_position.expect("couldn't get result pointer") as usize, 1);
+                    let position = *third_position.expect("couldn't get result pointer") as usize;
+                    self.write(position, 1);
                 } else {
-                    self.write(*third_position.expect("couldn't get result pointer") as usize, 0);
+                    let position = *third_position.expect("couldn't get result pointer") as usize;
+                    self.write(position, 0);
                 }
                 self.instruction_pointer += 4;
+                Processing
             }
             _ => panic!("unexpected opcode: {}", opcode),
-        }
+        };
 
-        false
+        result
     }
 
     fn get_value(&self, index: usize, mode: i32) -> i32 {
@@ -220,18 +247,18 @@ fn str_to_vec(str: &str) -> Vec<i32> {
 
 #[cfg(test)]
 mod tests {
-    use std::slice::Iter;
 
     use super::*;
 
     #[test]
     fn test_simple_input_output() {
-        let inputs = vec![1337];
-        let mut intputer = Intputer::with_input("3,0,4,0,99", inputs);
-        let outputs = intputer.legacy_run();
-        assert_eq!(outputs.len(), 1);
-        let result = outputs.get(0).cloned().unwrap();
-        assert_eq!(result, 1337);
+        let mut intputer = Intputer::new("3,0,4,0,99");
+        intputer.input(1337);
+        let output = match intputer.run() {
+            Output(out) => out,
+            _ => panic!("wrong status"),
+        };
+        assert_eq!(output, 1337);
     }
 
     #[test]
@@ -247,18 +274,22 @@ mod tests {
 
     #[test]
     fn i_try_to_write_a_program() {
-        let inputs = vec![10, 20];
         // does (input_one + 1) * input_two
         let program = "3,0,101,1,0,0,3,1,2,0,1,0,4,0,99";
-        let mut intputer = Intputer::with_input(program, inputs);
-        let outputs = intputer.legacy_run();
-        println!("result: {:?}", outputs);
-        assert_eq!(outputs, vec![220]);
+        let mut intputer = Intputer::new(program);
+        intputer.input(10);
+        intputer.input(20);
+        let output = match intputer.run() {
+            Output(out) => out,
+            _ => panic!("wrong status"),
+        };
+        assert_eq!(output, 220);
     }
 
     #[test]
     fn new_input_output() {
-        let intcode = "3,0,1001,0,1,0,4,0,3,0,1001,0,1,0,4,0,99";
+        // reads input, adds 1, outputs it, reads input, adds 1, outputs it, outputs 1337, ends
+        let intcode = "3,0,1001,0,1,0,4,0,3,0,1001,0,1,0,4,0,104,1337,99";
 //        let mut intputer = Intputer::with_input(intcode, vec![1,2]);
         let mut intputer = Intputer::new(intcode);
         if let Result::AwaitingInput = intputer.run() {
@@ -277,6 +308,11 @@ mod tests {
             out
         } else { panic!("wrong result") };
         assert_eq!(output, 3);
+
+        let output = if let Result::Output(out) = intputer.run() {
+            out
+        } else { panic!("wrong result") };
+        assert_eq!(output, 1337);
 
         if let Result::Done = intputer.run() {
         } else { panic!("wrong result") };

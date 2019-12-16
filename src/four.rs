@@ -1,5 +1,3 @@
-use std::intrinsics::transmute;
-
 pub fn four() {
     println!("four, there are {} different passwords", num_different_passwords(372304, 847060));
 }

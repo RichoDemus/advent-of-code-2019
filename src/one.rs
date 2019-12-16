@@ -14,7 +14,7 @@ pub fn calc_fuel_req() -> i32 {
 
     println!("{:?}", lines);
 
-    let mut fuel:i32 = lines
+    let fuel:i32 = lines
         .iter()
         .map(|line|line.parse::<i32>().expect("failed to convert to int"))
         .map(|mass|get_total_fuel_from_mass(mass))
@@ -27,7 +27,7 @@ pub fn calc_fuel_req() -> i32 {
 }
 
 fn get_total_fuel_from_mass(fuel: i32) -> i32 {
-    let init = fuel.clone();
+//    let init = fuel.clone();
     let mut last_fuel = fuel;
     let mut fuel = 0;
     loop {

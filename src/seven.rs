@@ -4,6 +4,7 @@ use itertools::Itertools;
 
 use crate::intputer::Intputer;
 use crate::read_lines::read_lines;
+use crate::intputer::Result::Output;
 
 pub fn seven() {
     let mut input = read_lines("seven");
@@ -18,6 +19,7 @@ pub fn seven_part2() {
 }
 
 fn run_feedback_loop_until_all_halt(program: &str, sequence: Vec<i32>) -> i32 {
+    println!("just print these to please linter: {:?}{:?}", program, sequence);
 //    let intputers = vec![
 //
 //    ];
@@ -37,9 +39,13 @@ fn highest_thruster_signal(program: &str) -> i32 {
 
 fn calculate_thruster_signal(program: &str, sequence: Vec<i32>) -> i32 {
     fn get_output(program: &str, phase: i32, input: i32) -> i32 {
-        let mut intputer = Intputer::with_input(program, vec![phase, input]);
-        let output = intputer.legacy_run();
-        output.get(0).cloned().expect("amplififier didn't produce output")
+        let mut intputer = Intputer::new(program);
+        intputer.input(phase);
+        intputer.input(input);
+        match intputer.run() {
+            Output(out) => out,
+            _ => panic!("wrong status"),
+        }
     }
 
     let mut prev_output = 0;
@@ -57,7 +63,6 @@ fn permutations<T>(vec: Vec<T>) -> Vec<Vec<T>> where T: Clone {
 
 #[cfg(test)]
 mod tests {
-    use crate::intputer::*;
     use crate::seven::{calculate_thruster_signal, highest_thruster_signal, permutations, run_feedback_loop_until_all_halt};
 
     #[test]
