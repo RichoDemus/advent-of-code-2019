@@ -40,40 +40,22 @@ fn to_digits(str: &str) -> Vec<i32> {
 }
 
 fn data_to_layers(image_data: &str, width: usize, height: usize) -> Vec<Vec<Vec<i32>>> {
-
-//    let layers = partition(image_data, width * height);
-//
-//    let layers: Vec<Vec<String>> = layers.into_iter()
-//        .map(|layer|partition(layer.as_str(), width))
-//        .collect();
-//
-//    println!("{:?}", layers);
-
     let digits = to_digits(image_data);
-    let chunks: Vec<Vec<i32>> = digits.chunks(width * height)
+    let chunks: Vec<Vec<i32>> = digits
+        .chunks(width * height)
         .map(|d| d.to_vec())
         .collect();
 
     let layers: Vec<Vec<Vec<i32>>> = chunks.into_iter()
-        .map(|v| {
-            v.chunks(width)
-                .map(|d| d.to_vec())
-                .collect()
-        }).collect();
+        .map(|v| v.chunks(width).map(|d| d.to_vec()).collect())
+        .collect();
 
     layers
-//    todo!()
 }
 
 fn num_one_digits_times_two_digits_from_layer_with_least_zeroes(layers: Vec<Vec<Vec<i32>>>) -> i32 {
     let mut pair: Vec<(i32, Vec<Vec<i32>>)> = layers.into_iter()
         .map(|layer| {
-//            let summed: i32 = layer.iter()
-//                .map(|v| {
-//                    let sum:i32 = v.iter().sum();
-//                    sum
-//                })
-//                .sum();
             let num_zeroes: i32 = layer.iter()
                 .map(|v| {
                     let zeroes: Vec<&i32> = v.iter().filter(|digit| digit == &&0).collect();
@@ -81,7 +63,7 @@ fn num_one_digits_times_two_digits_from_layer_with_least_zeroes(layers: Vec<Vec<
                     zeroes as i32
                 })
                 .sum();
-            (/*summed, */num_zeroes, layer)
+            (num_zeroes, layer)
         }).collect();
 
     pair.sort_unstable_by(|(zeroes, _), (other, _)| zeroes.cmp(other));
