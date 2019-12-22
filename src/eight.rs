@@ -1,4 +1,30 @@
-pub fn eight() {}
+use crate::read_lines::read_lines;
+
+pub fn eight() {
+    let input = read_lines("eight").remove(0);
+    let input = data_to_layers(input.as_str(), 25, 6);
+    let result = num_one_digits_times_two_digits_from_layer_with_least_zeroes(input);
+
+    assert_eq!(2375, result);
+}
+
+pub fn part_two() {
+    let input = read_lines("eight").remove(0);
+    let layers = data_to_layers(input.as_str(), 25, 6);
+    let picture = part_two_generate_image(layers);
+
+
+        for row in picture {
+            for cell in row {
+                if cell == 0 {
+                    print!(" ");
+                } else {
+                    print!("O");
+                }
+            }
+            println!()
+        }
+}
 
 #[allow(dead_code)]
 fn partition(s: &str, length: usize) -> Vec<String> {
@@ -31,6 +57,7 @@ fn sub_strings(string: &str, sub_len: usize) -> Vec<&str> {
     subs
 }
 
+#[allow(dead_code)]
 fn to_digits(str: &str) -> Vec<i32> {
     str.chars().into_iter()
         .map(|c| c.to_digit(10))
@@ -84,25 +111,12 @@ fn vec_concat(vec: Vec<Vec<i32>>) -> Vec<i32> {
     })
 }
 
-#[derive(Debug)]
-enum Color {
-    Black,
-    White,
-    Transparent,
-}
-
 fn part_two_generate_image(layers: Vec<Vec<Vec<i32>>>) -> Vec<Vec<i32>> {
     let mut picture = vec![vec![]];
 
     for layer in layers.into_iter().rev() {
         for (row, cells) in layer.into_iter().enumerate() {
             for (index, cell) in cells.into_iter().enumerate() {
-//                let color = match cell {
-//                    0 => Color::Black,
-//                    1 => Color::White,
-//                    2 => Color::Transparent,
-//                    _ => panic!("no such color"),
-//                };
                 if picture.len() <= row {
                     picture.push(vec![]);
                 }
@@ -123,8 +137,6 @@ fn part_two_generate_image(layers: Vec<Vec<Vec<i32>>>) -> Vec<Vec<i32>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::read_lines::read_lines;
-
     use super::*;
 
     #[test]
@@ -178,13 +190,6 @@ mod tests {
 
     #[test]
     fn testing_while_impl_part2() {
-//        let image_data = "2122";
-//        let layers = data_to_layers(image_data, 1,1);
-//        let picture = part_two_generate_image(layers);
-//
-//        println!("pic: {:?}", picture);
-//        assert_eq!(picture, vec![vec![2,1], vec![])
-
         assert_eq!(part_two_generate_image(data_to_layers("212", 1, 1)), vec![vec![1]]);
 
         assert_eq!(vec![vec![2]], part_two_generate_image(data_to_layers("22", 1, 1)));
@@ -204,23 +209,5 @@ mod tests {
         let picture = part_two_generate_image(layers);
 
         assert_eq!(picture, vec![vec![0, 1], vec![1, 0]])
-    }
-
-    #[test]
-    fn solve_second() {
-        let input = read_lines("eight").remove(0);
-        let layers = data_to_layers(input.as_str(), 25, 6);
-        let picture = part_two_generate_image(layers);
-
-//        for row in picture {
-//            for cell in row {
-//                if cell == 0 {
-//                    print!(" ");
-//                } else {
-//                    print!("O");
-//                }
-//            }
-//            println!()
-//        }
     }
 }

@@ -29,6 +29,7 @@ fn main() {
             seven::seven();
             seven::seven_part2();
             eight::eight();
+            eight::part_two();
         }
         _ => {}
     }
