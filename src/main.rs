@@ -32,6 +32,7 @@ fn main() {
             eight::eight();
             eight::part_two();
             nine::nine();
+            nine::nine_part2();
         }
         _ => {}
     }

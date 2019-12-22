@@ -7,6 +7,12 @@ pub fn nine() -> i64 {
     Intputer::run_with_input_single_output(program.as_str(), 1).unwrap()
 }
 
+pub fn nine_part2() -> i64 {
+    let mut input = read_lines("nine");
+    let program = input.pop().unwrap();
+    Intputer::run_with_input_single_output(program.as_str(), 2).unwrap()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -33,5 +39,10 @@ mod tests {
     #[test]
     fn solve_nine() {
         assert_eq!(nine(), 3013554615);
+    }
+
+    #[test]
+    fn solve_nine_part2() {
+        assert_eq!(nine_part2(), 50158);
     }
 }
