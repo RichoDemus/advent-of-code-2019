@@ -84,6 +84,43 @@ fn vec_concat(vec: Vec<Vec<i32>>) -> Vec<i32> {
     })
 }
 
+#[derive(Debug)]
+enum Color {
+    Black,
+    White,
+    Transparent,
+}
+
+fn part_two_generate_image(layers: Vec<Vec<Vec<i32>>>) -> Vec<Vec<i32>> {
+    let mut picture = vec![vec![]];
+
+    for layer in layers.into_iter().rev() {
+        for (row, cells) in layer.into_iter().enumerate() {
+            for (index, cell) in cells.into_iter().enumerate() {
+//                let color = match cell {
+//                    0 => Color::Black,
+//                    1 => Color::White,
+//                    2 => Color::Transparent,
+//                    _ => panic!("no such color"),
+//                };
+                if picture.len() <= row {
+                    picture.push(vec![]);
+                }
+                let row = picture.get_mut(row).expect("this shouldnt happen");
+                if row.len() <= index {
+                    row.push(2);
+                }
+                if cell == 2 {
+                    continue;
+                }
+                std::mem::replace(&mut row[index], cell);
+            }
+        }
+    }
+
+    picture
+}
+
 #[cfg(test)]
 mod tests {
     use crate::read_lines::read_lines;
@@ -137,5 +174,53 @@ mod tests {
         let result = num_one_digits_times_two_digits_from_layer_with_least_zeroes(input);
 
         assert_eq!(2375, result);
+    }
+
+    #[test]
+    fn testing_while_impl_part2() {
+//        let image_data = "2122";
+//        let layers = data_to_layers(image_data, 1,1);
+//        let picture = part_two_generate_image(layers);
+//
+//        println!("pic: {:?}", picture);
+//        assert_eq!(picture, vec![vec![2,1], vec![])
+
+        assert_eq!(part_two_generate_image(data_to_layers("212", 1, 1)), vec![vec![1]]);
+
+        assert_eq!(vec![vec![2]], part_two_generate_image(data_to_layers("22", 1, 1)));
+        assert_eq!(vec![vec![1]], part_two_generate_image(data_to_layers("12", 1, 1)));
+        assert_eq!(vec![vec![0]], part_two_generate_image(data_to_layers("02", 1, 1)));
+        assert_eq!(vec![vec![0]], part_two_generate_image(data_to_layers("0000222222", 1, 1)));
+
+        assert_eq!(vec![vec![2, 2], vec![2, 2]], part_two_generate_image(data_to_layers("22222222", 2, 2)));
+        assert_eq!(vec![vec![1, 1], vec![1, 1]], part_two_generate_image(data_to_layers("11112222", 2, 2)));
+        assert_eq!(vec![vec![0, 0], vec![0, 0]], part_two_generate_image(data_to_layers("00002222", 2, 2)));
+    }
+
+    #[test]
+    fn test_part2() {
+        let image_data = "0222112222120000";
+        let layers = data_to_layers(image_data, 2, 2);
+        let picture = part_two_generate_image(layers);
+
+        assert_eq!(picture, vec![vec![0, 1], vec![1, 0]])
+    }
+
+    #[test]
+    fn solve_second() {
+        let input = read_lines("eight").remove(0);
+        let layers = data_to_layers(input.as_str(), 25, 6);
+        let picture = part_two_generate_image(layers);
+
+//        for row in picture {
+//            for cell in row {
+//                if cell == 0 {
+//                    print!(" ");
+//                } else {
+//                    print!("O");
+//                }
+//            }
+//            println!()
+//        }
     }
 }
