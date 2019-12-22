@@ -201,7 +201,7 @@ impl Intputer {
                 // adjusts the relative base
                 let relative_base_adjust = self.get_value(*first_position.expect("couldn't get first pointer"), operation_and_modes.first_parameter_mode);
                 let old_base = self.relative_base;
-                self.relative_base += relative_base_adjust as usize;
+                self.relative_base = (self.relative_base as i64 + relative_base_adjust) as usize;
                 println!("\tAdjusting relative base: {} + {} => {}", old_base, relative_base_adjust, self.relative_base);
                 self.instruction_pointer += 2;
                 Processing
@@ -242,7 +242,6 @@ impl Intputer {
                 let position = position as usize;
                 if self.memory.len() <= position {
                     let old_len = self.memory.len();
-                    let new_size = position.checked_add(1).expect(format!("can't add {} + {}", position, 1).as_str());
                     self.memory.resize(position + 1, 0);
                     println!("\t\tResized memory from {} to {}", old_len, self.memory.len());
                 }
@@ -254,7 +253,6 @@ impl Intputer {
                 let position: usize = (self.relative_base as i64 + position) as usize;
                 if self.memory.len() <= position {
                     let old_len = self.memory.len();
-                    let new_size = position.checked_add(1).expect(format!("can't add {} + {}", position, 1).as_str());
                     self.memory.resize(position + 1, 0);
                     println!("\t\tResized memory from {} to {}", old_len, self.memory.len());
                 }
