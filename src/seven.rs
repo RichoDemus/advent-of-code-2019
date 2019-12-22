@@ -28,7 +28,7 @@ fn run_feedback_loop_until_all_halt(program: &str, sequence: Vec<i32>) -> i32 {
         .map(|i| {
             let mut intputer = Intputer::new(program);
             let seq = sequence.get(i).expect(format!("No sequence for intputer: {}", i).as_str());
-            intputer.input(seq.clone());
+            intputer.input(seq.clone() as i64);
             intputer
 
         })
@@ -53,7 +53,7 @@ fn run_feedback_loop_until_all_halt(program: &str, sequence: Vec<i32>) -> i32 {
     }
 
 
-    last_output
+    last_output as i32
 }
 
 fn highest_thruster_signal(program: &str) -> i32 {
@@ -81,10 +81,10 @@ fn highest_thruster_signal_feedback_loop(program: &str) -> i32 {
 fn calculate_thruster_signal(program: &str, sequence: Vec<i32>) -> i32 {
     fn get_output(program: &str, phase: i32, input: i32) -> i32 {
         let mut intputer = Intputer::new(program);
-        intputer.input(phase);
-        intputer.input(input);
+        intputer.input(phase as i64);
+        intputer.input(input as i64);
         match intputer.run() {
-            Output(out) => out,
+            Output(out) => out as i32,
             _ => panic!("wrong status"),
         }
     }

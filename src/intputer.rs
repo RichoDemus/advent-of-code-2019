@@ -5,19 +5,19 @@ use crate::intputer::Result::{AwaitingInput, Done, Output, Processing};
 #[derive(Debug)]
 pub(crate) enum Result {
     Done,
-    Output(i32),
+    Output(i64),
     AwaitingInput,
     Processing, //internal
 }
 
 #[derive(Debug)]
 pub(crate) struct Intputer {
-    memory: Vec<i32>,
+    memory: Vec<i64>,
     instruction_pointer: usize,
     relative_base: usize,
     //which "int" of instructions we're processing
-    inputs: Vec<i32>,
-    outputs: Vec<i32>,
+    inputs: Vec<i64>,
+    outputs: Vec<i64>,
 }
 
 impl Intputer {
@@ -31,15 +31,15 @@ impl Intputer {
         }
     }
 
-    pub(crate) fn run_with_input_single_output(intcode: &str, input: i32) -> Option<i32> {
+    pub(crate) fn run_with_input_single_output(intcode: &str, input: i64) -> Option<i64> {
         Intputer::run_with_input(intcode, input).get(0).cloned()
     }
 
-    pub(crate) fn run_no_input_single_output(intcode: &str) -> Option<i32> {
+    pub(crate) fn run_no_input_single_output(intcode: &str) -> Option<i64> {
         Intputer::run_no_input(intcode).get(0).cloned()
     }
 
-    pub(crate) fn run_with_input(intcode: &str, input: i32) -> Vec<i32> {
+    pub(crate) fn run_with_input(intcode: &str, input: i64) -> Vec<i64> {
         let mut intputer = Intputer::new(intcode);
         intputer.input(input);
         let mut result = vec![];
@@ -54,7 +54,7 @@ impl Intputer {
         result
     }
 
-    pub(crate) fn run_no_input(intcode: &str) -> Vec<i32> {
+    pub(crate) fn run_no_input(intcode: &str) -> Vec<i64> {
         let mut intputer = Intputer::new(intcode);
         let mut result = vec![];
         loop {
@@ -68,7 +68,7 @@ impl Intputer {
         result
     }
 
-    pub(crate) fn input(&mut self, input: i32) {
+    pub(crate) fn input(&mut self, input: i64) {
         self.inputs.push(input);
     }
 
@@ -104,23 +104,23 @@ impl Intputer {
         let result: Result = match opcode {
             1 => {
                 // sum pos1 and pos2, write to pos3
-                let first_value = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
-                let second_value = self.get_value(*second_position.expect("couldn't get second pointer") as usize, operation_and_modes.second_parameter_mode);
+                let first_value = self.get_value(*first_position.expect("couldn't get first pointer"), operation_and_modes.first_parameter_mode);
+                let second_value = self.get_value(*second_position.expect("couldn't get second pointer"), operation_and_modes.second_parameter_mode);
                 println!("adding {} and {} (pos {:?} and {:?}) and writing it to {:?}", first_value, second_value, first_position, second_position, third_position);
                 let result = first_value + second_value;
-                let position = *third_position.expect("couldn't get result pointer") as usize;
-                self.write(position, result);
+                let position = *third_position.expect("couldn't get result pointer");
+                self.write(position, result, operation_and_modes.third_parameter_mode);
                 self.instruction_pointer += 4;
                 Processing
             }
             2 => {
                 // multiply pos1 and pos2, write to pos3
-                let first_value = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
-                let second_value = self.get_value(*second_position.expect("couldn't get second pointer") as usize, operation_and_modes.second_parameter_mode);
+                let first_value = self.get_value(*first_position.expect("couldn't get first pointer"), operation_and_modes.first_parameter_mode);
+                let second_value = self.get_value(*second_position.expect("couldn't get second pointer"), operation_and_modes.second_parameter_mode);
 //                println!("multiplying {} with {} (pos {} and {}) and writing it to {}", first_value, second_value, first_position, second_position, result_position);
                 let result = first_value * second_value;
-                let position = *third_position.expect("couldn't get result pointer") as usize;
-                self.write(position, result);
+                let position = *third_position.expect("couldn't get result pointer");
+                self.write(position, result, operation_and_modes.third_parameter_mode);
                 self.instruction_pointer += 4;
                 Processing
             }
@@ -130,15 +130,15 @@ impl Intputer {
                     AwaitingInput
                 } else {
                     let input = self.inputs.remove(0);
-                    let position = *first_position.expect("couldn't get first pointer") as usize;
-                    self.write(position, input);
+                    let position = *first_position.expect("couldn't get first pointer");
+                    self.write(position, input, operation_and_modes.first_parameter_mode);
                     self.instruction_pointer += 2;
                     Processing
                 }
             }
             4 => {
                 // output pos1
-                let value = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
+                let value = self.get_value(*first_position.expect("couldn't get first pointer"), operation_and_modes.first_parameter_mode);
                 // self.outputs.push(value);
                 self.instruction_pointer += 2;
                 Output(value)
@@ -146,9 +146,9 @@ impl Intputer {
             5 => {
                 // jump-if-true: if the first parameter is non-zero,
                 //it sets the instruction pointer to the value from the second parameter. Otherwise, it does nothing.
-                let value_to_check = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
+                let value_to_check = self.get_value(*first_position.expect("couldn't get first pointer"), operation_and_modes.first_parameter_mode);
                 if value_to_check != 0 {
-                    let new_instruction_pointer = self.get_value(*second_position.expect("couldn't get second pointer") as usize, operation_and_modes.second_parameter_mode);
+                    let new_instruction_pointer = self.get_value(*second_position.expect("couldn't get second pointer"), operation_and_modes.second_parameter_mode);
                     self.instruction_pointer = new_instruction_pointer as usize;
                 } else {
                     self.instruction_pointer += 3;
@@ -158,9 +158,9 @@ impl Intputer {
             6 => {
                 // jump-if-false: if the first parameter is zero,
                 //it sets the instruction pointer to the value from the second parameter. Otherwise, it does nothing.
-                let value_to_check = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
+                let value_to_check = self.get_value(*first_position.expect("couldn't get first pointer"), operation_and_modes.first_parameter_mode);
                 if value_to_check == 0 {
-                    let new_instruction_pointer = self.get_value(*second_position.expect("couldn't get second pointer") as usize, operation_and_modes.second_parameter_mode);
+                    let new_instruction_pointer = self.get_value(*second_position.expect("couldn't get second pointer"), operation_and_modes.second_parameter_mode);
                     self.instruction_pointer = new_instruction_pointer as usize;
                 } else {
                     self.instruction_pointer += 3;
@@ -170,14 +170,14 @@ impl Intputer {
             7 => {
                 // less than: if the first parameter is less than the second parameter,
                 //it stores 1 in the position given by the third parameter. Otherwise, it stores 0.
-                let first_value = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
-                let second_value = self.get_value(*second_position.expect("couldn't get second pointer") as usize, operation_and_modes.second_parameter_mode);
+                let first_value = self.get_value(*first_position.expect("couldn't get first pointer"), operation_and_modes.first_parameter_mode);
+                let second_value = self.get_value(*second_position.expect("couldn't get second pointer"), operation_and_modes.second_parameter_mode);
                 if first_value < second_value {
-                    let position = *third_position.expect("couldn't get result pointer") as usize;
-                    self.write(position, 1);
+                    let position = *third_position.expect("couldn't get result pointer");
+                    self.write(position, 1, operation_and_modes.third_parameter_mode);
                 } else {
-                    let position = *third_position.expect("couldn't get result pointer") as usize;
-                    self.write(position, 0);
+                    let position = *third_position.expect("couldn't get result pointer");
+                    self.write(position, 0, operation_and_modes.third_parameter_mode);
                 }
                 self.instruction_pointer += 4;
                 Processing
@@ -185,21 +185,21 @@ impl Intputer {
             8 => {
                 // equals: if the first parameter is equal to the second parameter,
                 //it stores 1 in the position given by the third parameter. Otherwise, it stores 0.
-                let first_value = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
-                let second_value = self.get_value(*second_position.expect("couldn't get second pointer") as usize, operation_and_modes.second_parameter_mode);
+                let first_value = self.get_value(*first_position.expect("couldn't get first pointer"), operation_and_modes.first_parameter_mode);
+                let second_value = self.get_value(*second_position.expect("couldn't get second pointer"), operation_and_modes.second_parameter_mode);
                 if first_value == second_value {
-                    let position = *third_position.expect("couldn't get result pointer") as usize;
-                    self.write(position, 1);
+                    let position = *third_position.expect("couldn't get result pointer");
+                    self.write(position, 1, operation_and_modes.third_parameter_mode);
                 } else {
-                    let position = *third_position.expect("couldn't get result pointer") as usize;
-                    self.write(position, 0);
+                    let position = *third_position.expect("couldn't get result pointer");
+                    self.write(position, 0, operation_and_modes.third_parameter_mode);
                 }
                 self.instruction_pointer += 4;
                 Processing
             }
             9 => {
                 // adjusts the relative base
-                let relative_base_adjust = self.get_value(*first_position.expect("couldn't get first pointer") as usize, operation_and_modes.first_parameter_mode);
+                let relative_base_adjust = self.get_value(*first_position.expect("couldn't get first pointer"), operation_and_modes.first_parameter_mode);
                 let old_base = self.relative_base;
                 self.relative_base += relative_base_adjust as usize;
                 println!("\tAdjusting relative base: {} + {} => {}", old_base, relative_base_adjust, self.relative_base);
@@ -212,20 +212,23 @@ impl Intputer {
         result
     }
 
-    fn get_value(&self, index: usize, mode: i32) -> i32 {
+    fn get_value(&self, index: i64, mode: i64) -> i64 {
         match mode {
             0 => {
+                let index = index as usize;
                 let value = self.memory.get(index).cloned().unwrap_or(0);
                 println!("\tread {} from memory slot {}", value, index);
                 value
             },
             1 => {
-                let value = index as i32;
+                let value = index as i64;
                 println!("\tread constant {}", index);
                 value
             },
             2 => {
-                let value = self.memory.get(self.relative_base + index).cloned().unwrap_or(0);
+//                let i = self.relative_base.checked_add(index).expect(format!("can't add {} + {}", self.relative_base, index).as_str());
+                let i = (self.relative_base as i64 + index) as usize;
+                let value = self.memory.get(i).cloned().unwrap_or(0);
                 println!("\tread {} from relative memory slot {} + {}", value, self.relative_base, index);
                 value
             },
@@ -233,27 +236,46 @@ impl Intputer {
         }
     }
 
-    fn write(&mut self, position: usize, value: i32) {
-        if self.memory.len() <= position {
-            let old_len = self.memory.len();
-            self.memory.resize(position + 1, 0);
-            println!("\t\tResized memory from {} to {}", old_len, self.memory.len());
+    fn write(&mut self, position: i64, value: i64, mode: i64) {
+        match mode {
+            0 => {
+                let position = position as usize;
+                if self.memory.len() <= position {
+                    let old_len = self.memory.len();
+                    let new_size = position.checked_add(1).expect(format!("can't add {} + {}", position, 1).as_str());
+                    self.memory.resize(position + 1, 0);
+                    println!("\t\tResized memory from {} to {}", old_len, self.memory.len());
+                }
+                let old = std::mem::replace(&mut self.memory[position], value);
+                println!("Replaced {} with {} at {}", old, value, position)
+            },
+            1 => panic!("mode 1 is not supported for writing"),
+            2 => {
+                let position: usize = (self.relative_base as i64 + position) as usize;
+                if self.memory.len() <= position {
+                    let old_len = self.memory.len();
+                    let new_size = position.checked_add(1).expect(format!("can't add {} + {}", position, 1).as_str());
+                    self.memory.resize(position + 1, 0);
+                    println!("\t\tResized memory from {} to {}", old_len, self.memory.len());
+                }
+                let old = std::mem::replace(&mut self.memory[position], value);
+                println!("Replaced {} with {} at {}", old, value, position)
+            },
+            _ => todo!("mode {} not implemented for writing", mode),
         }
-        let old = std::mem::replace(&mut self.memory[position], value);
-        println!("Replaced {} with {} at {}", old, value, position)
     }
 }
 
 #[derive(Eq, PartialEq, Debug)]
 struct OperationAndModes {
-    operation: i32,
-    first_parameter_mode: i32,
-    second_parameter_mode: i32,
-    third_parameter_mode: i32,
+    operation: i64,
+    first_parameter_mode: i64,
+    second_parameter_mode: i64,
+    third_parameter_mode: i64,
 }
 
 impl OperationAndModes {
-    fn from(raw: i32) -> OperationAndModes {
+    fn from(raw: i64) -> OperationAndModes {
         fn number_to_digits(number: u32) -> Vec<u32> {
             let digits: Vec<_> = number.to_string().chars().map(|d| d.to_digit(10).unwrap()).collect();
             digits
@@ -266,17 +288,17 @@ impl OperationAndModes {
         let second_parameter_mode = digits.pop().unwrap_or(0);
         let third_parameter_mode = digits.pop().unwrap_or(0);
         OperationAndModes {
-            operation: operation as i32,
-            first_parameter_mode: first_parameter_mode as i32,
-            second_parameter_mode: second_parameter_mode as i32,
-            third_parameter_mode: third_parameter_mode as i32,
+            operation: operation as i64,
+            first_parameter_mode: first_parameter_mode as i64,
+            second_parameter_mode: second_parameter_mode as i64,
+            third_parameter_mode: third_parameter_mode as i64,
         }
     }
 }
 
-fn str_to_vec(str: &str) -> Vec<i32> {
+fn str_to_vec(str: &str) -> Vec<i64> {
     str.split(",")
-        .map(|code| code.parse::<i32>().expect("failed to parse to int"))
+        .map(|code| code.parse::<i64>().expect("failed to parse to int"))
         .collect()
 }
 

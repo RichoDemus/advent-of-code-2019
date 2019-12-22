@@ -25,5 +25,6 @@ mod tests {
     fn test_relative_base() {
         assert_eq!(Intputer::run_no_input_single_output("204,0,99").unwrap(), 204);
         assert_eq!(Intputer::run_no_input_single_output("204,1,99").unwrap(), 1);
+        assert_eq!(Intputer::run_no_input_single_output("9,1,22201,0,1,-1,204,-1,99").unwrap(), 22202);
     }
 }
