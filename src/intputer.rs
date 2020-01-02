@@ -35,6 +35,7 @@ impl Intputer {
         Intputer::run_with_input(intcode, input).get(0).cloned()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn run_no_input_single_output(intcode: &str) -> Option<i64> {
         Intputer::run_no_input(intcode).get(0).cloned()
     }
@@ -54,6 +55,7 @@ impl Intputer {
         result
     }
 
+    #[allow(dead_code)]
     pub(crate) fn run_no_input(intcode: &str) -> Vec<i64> {
         let mut intputer = Intputer::new(intcode);
         let mut result = vec![];
