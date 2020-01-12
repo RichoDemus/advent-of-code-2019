@@ -3,7 +3,6 @@ use std::cmp::Ordering;
 use std::f64::consts::PI;
 
 use float_cmp::approx_eq;
-use math::round;
 
 use crate::read_lines::read_lines;
 use num::checked_pow;
@@ -169,19 +168,6 @@ impl AsteroidField {
         self.asteroids.iter().any(|asteroid| asteroid == point)
     }
 
-    fn shoot_at(&mut self, point: &Point) -> ShootResult {
-        match self.has_asteroid_at(point) {
-            false => ShootResult::Miss,
-            true => {
-                self.asteroids = self.asteroids.iter()
-                    .filter(|asteroid| asteroid != &point)
-                    .cloned()
-                    .collect();
-                ShootResult::Hit
-            }
-        }
-    }
-
     fn remove_asteroid_at(&mut self, point: &Point) {
         self.asteroids = self.asteroids.iter()
             .filter(|asteroid| asteroid != &point)
@@ -189,17 +175,6 @@ impl AsteroidField {
             .collect();
     }
 }
-
-enum ShootResult {
-    Hit,
-    Miss,
-}
-
-//fn are_on_a_line(one: &Point, two: &Point, three: &Point) -> bool {
-//    let left_hand = (two.y - one.y) * (three.x - one.x);
-//    let right_hand = (three.y - one.y) * (two.x - one.x);
-//    left_hand == right_hand
-//}
 
 fn parse_again(map: Vec<Vec<bool>>) -> Vec<Point> {
     let mut result = vec![];
@@ -212,36 +187,6 @@ fn parse_again(map: Vec<Vec<bool>>) -> Vec<Point> {
     };
 
     result
-}
-
-struct Angle {
-    dy: i32,
-    dx: i32,
-    laser_length: i32,
-}
-
-impl Angle {
-    fn upwards(laser_length: i32) -> Angle {
-        Angle { dy: -1, dx: 0, laser_length }
-    }
-    fn next_point_in_line(&self, x: i32, y: i32) -> (i32, i32) {
-        (x + self.dx, y + self.dy)
-    }
-}
-
-fn find_index_of_first_asteroid_with_non_negative_angle(asteroids: &Vec<(f64, Point)>) -> usize {
-    for (i, (angle, _)) in asteroids.iter().enumerate() {
-        match angle.partial_cmp(&0_f64) {
-            None => panic!("Can't compare {} and {}", angle, 0_64),
-            Some(ordering) => match ordering {
-                Ordering::Less => { /* noop */ }
-                Ordering::Equal => { return i; }
-                Ordering::Greater => { return i; }
-            },
-        }
-    };
-
-    0 // if there are no non-negative, return the first, I think....
 }
 
 fn calc_asteroid_destruction_order(mut field: AsteroidField, station: Option<Point>) -> Vec<Point> {
@@ -258,14 +203,13 @@ fn calc_asteroid_destruction_order(mut field: AsteroidField, station: Option<Poi
 
 //    println!("Asteroids: {:?}", asteroids_by_angles);
 
-    let (mut current_angle, _) = asteroids_by_angles.get(0).expect("no asteroids....");
     let mut first_index = 0;
     let mut last_index = 0;
     let mut removed_asteroids = vec![];
     while !field.asteroids.is_empty() { // todo use asteroids_by_angles instead
         let mut asteroids_for_current_angle = vec![];
         let (tmp_angle, _) = asteroids_by_angles.get(first_index).expect(format!("no asteroid at {}....", first_index).as_str());
-        current_angle = *tmp_angle;
+        let current_angle = *tmp_angle;
 //        println!("\nAsteroids left: {:?}", field.asteroids);
 //        println!("Angle is: {}", current_angle);
         'asteroid_line_scan: for (index, (angle, asteroid)) in asteroids_by_angles.iter().enumerate() {
@@ -302,40 +246,6 @@ fn calc_asteroid_destruction_order(mut field: AsteroidField, station: Option<Poi
         }
     }
     removed_asteroids
-
-//    let max_laser_length = calculate_max_laser_length(&field, &station);
-//    let mut angle = Angle::upwards(max_laser_length);
-//
-//
-//    let mut destroyed_asteroids = vec![];
-//    while !field.asteroids.is_empty() {
-//        let mut x = station.x;
-//        let mut y = station.y;
-//        'shoot_angle: for i in 0..max_laser_length {
-//            let (x, y) = angle.next_point_in_line(x, y);
-//            let maybe_asteroid = Point { x, y };
-//            match field.shoot_at(&maybe_asteroid) {
-//                ShootResult::Hit => {
-//                    destroyed_asteroids.push(maybe_asteroid);
-//                    break 'shoot_angle;
-//                }
-//                ShootResult::Miss => {}
-//            }
-//        }
-////        angle.next();
-//    }
-
-//    println!("-90: {:?}", -90_f64.to_radians().tan());
-//
-//    for i in 0..=900 {
-//        let i = f64::from(i);
-//        let i = i * 0.1_f64;
-//        let tan = i.to_radians().tan();
-//        let rounded = round::half_up(tan, 5);
-//        let one_div = 1_f64 / tan;
-//        let one_div_rounded = round::half_to_even(1_f64 / tan, 0);
-//        println!("{}: {:?} ~ {} => {}", i, rounded, one_div, one_div_rounded);
-//    }
 }
 
 fn get_closest_asteroid(mut asteroids: Vec<Point>, station: &Point) -> Point {
@@ -400,7 +310,6 @@ fn group_asteroids_by_angles(asteroids: &Vec<Point>, station: &Point) -> Vec<(f6
 #[cfg(test)]
 mod tests {
     use super::*;
-    use itertools::assert_equal;
 
     #[test]
     fn first_test_case() {
@@ -590,12 +499,6 @@ mod tests {
 
     #[test]
     fn test_atan_version() {
-        let input = vec![
-            String::from("#.#.."),
-            String::from("###.#"),
-            String::from("#.#.#"),
-        ];
-
         let input = vec![
             String::from(".#..##.###...#######"),
             String::from("##.############..##."),
