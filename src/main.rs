@@ -35,6 +35,7 @@ fn main() {
             nine::nine();
             nine::nine_part2();
             ten::ten();
+            ten::ten_part2();
         }
         _ => {}
     }
