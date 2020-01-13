@@ -77,7 +77,7 @@ impl Intputer {
     pub(crate) fn run(&mut self) -> Result {
         loop {
             let res = self.process();
-            println!("-\tResult: {:?}", res);
+//            println!("-\tResult: {:?}", res);
             if let Processing = res {
                 continue;
             }
@@ -89,9 +89,9 @@ impl Intputer {
     fn process(&mut self) -> Result {
         let first_instruction = self.instruction_pointer;
         let last_instruction = cmp::min(first_instruction + 4, self.memory.len());
-        println!("Reading instructions from {} to {}", first_instruction, last_instruction);
+//        println!("Reading instructions from {} to {}", first_instruction, last_instruction);
         let instructions = &self.memory[first_instruction..last_instruction];
-        println!("instructions: {:?}", instructions);
+//        println!("instructions: {:?}", instructions);
         if let Some(99) = instructions.first() {
             return Done;
         }
@@ -102,13 +102,13 @@ impl Intputer {
         let second_position = instructions.get(2);
         let third_position = instructions.get(3);
 
-        println!("Processing code {}, pos {:?} and {:?}, result to {:?} with relative base {}", opcode, first_position, second_position, third_position, self.relative_base);
+//        println!("Processing code {}, pos {:?} and {:?}, result to {:?} with relative base {}", opcode, first_position, second_position, third_position, self.relative_base);
         let result: Result = match opcode {
             1 => {
                 // sum pos1 and pos2, write to pos3
                 let first_value = self.get_value(*first_position.expect("couldn't get first pointer"), operation_and_modes.first_parameter_mode);
                 let second_value = self.get_value(*second_position.expect("couldn't get second pointer"), operation_and_modes.second_parameter_mode);
-                println!("adding {} and {} (pos {:?} and {:?}) and writing it to {:?}", first_value, second_value, first_position, second_position, third_position);
+//                println!("adding {} and {} (pos {:?} and {:?}) and writing it to {:?}", first_value, second_value, first_position, second_position, third_position);
                 let result = first_value + second_value;
                 let position = *third_position.expect("couldn't get result pointer");
                 self.write(position, result, operation_and_modes.third_parameter_mode);
@@ -202,9 +202,9 @@ impl Intputer {
             9 => {
                 // adjusts the relative base
                 let relative_base_adjust = self.get_value(*first_position.expect("couldn't get first pointer"), operation_and_modes.first_parameter_mode);
-                let old_base = self.relative_base;
+                let _old_base = self.relative_base;
                 self.relative_base = (self.relative_base as i64 + relative_base_adjust) as usize;
-                println!("\tAdjusting relative base: {} + {} => {}", old_base, relative_base_adjust, self.relative_base);
+//                println!("\tAdjusting relative base: {} + {} => {}", old_base, relative_base_adjust, self.relative_base);
                 self.instruction_pointer += 2;
                 Processing
             }
@@ -219,19 +219,19 @@ impl Intputer {
             0 => {
                 let index = index as usize;
                 let value = self.memory.get(index).cloned().unwrap_or(0);
-                println!("\tread {} from memory slot {}", value, index);
+//                println!("\tread {} from memory slot {}", value, index);
                 value
             },
             1 => {
                 let value = index as i64;
-                println!("\tread constant {}", index);
+//                println!("\tread constant {}", index);
                 value
             },
             2 => {
 //                let i = self.relative_base.checked_add(index).expect(format!("can't add {} + {}", self.relative_base, index).as_str());
                 let i = (self.relative_base as i64 + index) as usize;
                 let value = self.memory.get(i).cloned().unwrap_or(0);
-                println!("\tread {} from relative memory slot {} + {}", value, self.relative_base, index);
+//                println!("\tread {} from relative memory slot {} + {}", value, self.relative_base, index);
                 value
             },
             _ => panic!(format!("Unknown mode {}", mode)),
@@ -243,23 +243,23 @@ impl Intputer {
             0 => {
                 let position = position as usize;
                 if self.memory.len() <= position {
-                    let old_len = self.memory.len();
+                    let _old_len = self.memory.len();
                     self.memory.resize(position + 1, 0);
-                    println!("\t\tResized memory from {} to {}", old_len, self.memory.len());
+//                    println!("\t\tResized memory from {} to {}", old_len, self.memory.len());
                 }
-                let old = std::mem::replace(&mut self.memory[position], value);
-                println!("Replaced {} with {} at {}", old, value, position)
+                let _old = std::mem::replace(&mut self.memory[position], value);
+//                println!("Replaced {} with {} at {}", old, value, position)
             },
             1 => panic!("mode 1 is not supported for writing"),
             2 => {
                 let position: usize = (self.relative_base as i64 + position) as usize;
                 if self.memory.len() <= position {
-                    let old_len = self.memory.len();
+                    let _old_len = self.memory.len();
                     self.memory.resize(position + 1, 0);
-                    println!("\t\tResized memory from {} to {}", old_len, self.memory.len());
+//                    println!("\t\tResized memory from {} to {}", old_len, self.memory.len());
                 }
-                let old = std::mem::replace(&mut self.memory[position], value);
-                println!("Replaced {} with {} at {}", old, value, position)
+                let _old = std::mem::replace(&mut self.memory[position], value);
+//                println!("Replaced {} with {} at {}", old, value, position)
             },
             _ => todo!("mode {} not implemented for writing", mode),
         }

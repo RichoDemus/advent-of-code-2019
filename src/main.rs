@@ -13,6 +13,7 @@ mod seven;
 mod eight;
 mod nine;
 mod ten;
+mod eleven;
 mod read_lines;
 
 fn main() {
@@ -36,6 +37,7 @@ fn main() {
             nine::nine_part2();
             ten::ten();
             ten::ten_part2();
+            eleven::eleven();
         }
         _ => {}
     }
