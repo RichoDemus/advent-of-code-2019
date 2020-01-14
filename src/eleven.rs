@@ -1,3 +1,4 @@
+use std::cmp;
 use std::collections::HashMap;
 
 use crate::eleven::Direction::{Down, Left, Right, Up};
@@ -8,6 +9,8 @@ use crate::read_lines::read_lines;
 pub fn eleven() {
     let answer = solve_eleven_part1();
     println!("The answer is {}", answer);
+
+    solve_eleven_part2();
 }
 
 fn solve_eleven_part1() -> i32 {
@@ -50,6 +53,60 @@ fn solve_eleven_part1() -> i32 {
     }
 
     board.painted_panels.len() as i32
+}
+
+fn solve_eleven_part2() {
+    let input = &*get_program();
+    let mut intputer = Intputer::new(input);
+
+    let mut board = Board::new();
+    board.painted_panels.insert(Panel { position: Point { y: 100, x: 100 } }, 1);
+    loop {
+        let color_under_robot = board.get_color_under_robot();
+        intputer.input(color_under_robot as i64);
+        let new_color = match intputer.run() {
+            Output(color) => color as i32,
+            Done => break,
+            AwaitingInput => panic!("AwaitingInput not expected, expected a color"),
+            Processing => panic!("Processing not expected, expected a color"),
+        };
+        let new_direction = match intputer.run() {
+            Output(direction) => direction as i32,
+            Done => break,
+            AwaitingInput => panic!("AwaitingInput not expected, expected a direction"),
+            Processing => panic!("Processing not expected, expected a direction"),
+        };
+
+        board.paint_under_robot(new_color);
+        board.turn_robot(new_direction);
+    }
+
+    println!("{:?}", board.painted_panels);
+    let some_panel = board.painted_panels.keys().last().expect("no painted panels...");
+    let mut x_min = some_panel.position.x;
+    let mut x_max = some_panel.position.x;
+    let mut y_min = some_panel.position.y;
+    let mut y_max = some_panel.position.y;
+    for panel in board.painted_panels.keys() {
+        let x = panel.position.x;
+        let y = panel.position.y;
+
+        x_min = cmp::min(x_min, x);
+        x_max = cmp::max(x_max, x);
+        y_min = cmp::min(y_min, y);
+        y_max = cmp::max(y_max, y);
+    }
+
+    println!("boundaries: y: {}-{}, x: {}-{}", y_min, y_max, x_min, x_max);
+    for y in y_min..=y_max {
+        for x in x_min..=x_max {
+            let tile = board.painted_panels.get(&Panel { position: Point { y, x } }).cloned().unwrap_or(0);
+            let tile = if tile == 1 { "#" } else { " " };
+            print!("{} ", tile);
+        }
+        println!()
+    }
+    // ABCLFUHJ
 }
 
 fn get_program() -> Box<str> {
@@ -104,7 +161,7 @@ impl Board {
     }
 }
 
-#[derive(Hash, Eq, PartialEq, Debug)]
+#[derive(Hash, Eq, PartialEq, Debug, Clone)]
 struct Panel {
     position: Point,
 }
@@ -146,7 +203,7 @@ enum Direction {
     Right,
 }
 
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
 struct Point {
     y: i32,
     x: i32,
@@ -231,5 +288,10 @@ mod tests {
     fn actually_solve_eleven_part1() {
         let answer = solve_eleven_part1();
         assert_eq!(answer, 1732);
+    }
+
+    #[test]
+    fn actually_solve_eleven_part2() {
+        solve_eleven_part2();
     }
 }
