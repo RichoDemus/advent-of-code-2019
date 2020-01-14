@@ -1,6 +1,8 @@
 use std::cmp;
 use std::collections::HashMap;
 
+use num::range_inclusive;
+
 use crate::eleven::Direction::{Down, Left, Right, Up};
 use crate::intputer::Intputer;
 use crate::intputer::Result::{AwaitingInput, Done, Output, Processing};
@@ -81,24 +83,9 @@ fn solve_eleven_part2() {
         board.turn_robot(new_direction);
     }
 
-    println!("{:?}", board.painted_panels);
-    let some_panel = board.painted_panels.keys().last().expect("no painted panels...");
-    let mut x_min = some_panel.position.x;
-    let mut x_max = some_panel.position.x;
-    let mut y_min = some_panel.position.y;
-    let mut y_max = some_panel.position.y;
-    for panel in board.painted_panels.keys() {
-        let x = panel.position.x;
-        let y = panel.position.y;
+    let (y_min, y_max, x_min, x_max) = get_min_and_max_values(&board.painted_panels.keys().cloned().collect());
 
-        x_min = cmp::min(x_min, x);
-        x_max = cmp::max(x_max, x);
-        y_min = cmp::min(y_min, y);
-        y_max = cmp::max(y_max, y);
-    }
-
-    println!("boundaries: y: {}-{}, x: {}-{}", y_min, y_max, x_min, x_max);
-    for y in y_min..=y_max {
+    for y in range_inclusive(y_min, y_max).rev() {
         for x in x_min..=x_max {
             let tile = board.painted_panels.get(&Panel { position: Point { y, x } }).cloned().unwrap_or(0);
             let tile = if tile == 1 { "#" } else { " " };
@@ -107,6 +94,27 @@ fn solve_eleven_part2() {
         println!()
     }
     // ABCLFUHJ
+}
+
+fn get_min_and_max_values(panels: &Vec<Panel>) -> (i32, i32, i32, i32) {
+    let some_panel = panels.first().expect("no painted panels...");
+
+    let initial_value = (some_panel.position.y, some_panel.position.y, some_panel.position.x, some_panel.position.x);
+
+    // would've been nice to do this with fold1 from itertools
+    // but it seems there output needs to be the same as input...
+    let (y_min, y_max, x_min, x_max) = panels.iter()
+        .fold(
+            initial_value,
+            |(y_min, y_max, x_min, x_max), panel| (
+                cmp::min(y_min, panel.position.y),
+                cmp::max(y_max, panel.position.y),
+                cmp::min(x_min, panel.position.x),
+                cmp::max(x_max, panel.position.x),
+            ),
+        );
+
+    (y_min, y_max, x_min, x_max)
 }
 
 fn get_program() -> Box<str> {
@@ -293,5 +301,19 @@ mod tests {
     #[test]
     fn actually_solve_eleven_part2() {
         solve_eleven_part2();
+    }
+
+    #[test]
+    fn test_calc_min_and_max() {
+        let (y_min, y_max, x_min, x_max) = get_min_and_max_values(&vec![
+            Panel { position: Point { y: 0, x: 3 } },
+            Panel { position: Point { y: 3, x: 4 } },
+            Panel { position: Point { y: 11, x: 6 } },
+        ]);
+
+        assert_eq!(y_min, 0);
+        assert_eq!(y_max, 11);
+        assert_eq!(x_min, 3);
+        assert_eq!(x_max, 6);
     }
 }
